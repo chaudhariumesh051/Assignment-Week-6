@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CRUD App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.toast { transition: all 0.5s; opacity: 0; pointer-events: none; }
+.toast.show { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body class="bg-gray-100 p-6 min-h-screen">
+<div class="max-w-6xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+<h1 class="text-4xl font-bold mb-6 text-center text-blue-600">CRUD App</h1>
+<div class="flex justify-center mb-6 space-x-4">
+  <button onclick="switchTab('products')" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Products</button>
+  <button onclick="switchTab('users')" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">Users</button>
+</div>
+
+<div id="productsTab">
+  <form id="productForm" class="grid md:grid-cols-4 gap-4 mb-6">
+    <input type="text" id="pname" placeholder="Name" class="p-2 border rounded" required>
+    <input type="number" id="pprice" placeholder="Price" class="p-2 border rounded" required>
+    <input type="text" id="pdesc" placeholder="Description" class="p-2 border rounded">
+    <button class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Add Product</button>
+  </form>
+  <table class="min-w-full border text-sm text-left">
+    <thead class="bg-gray-200"><tr>
+      <th class="p-3 border">ID</th><th class="p-3 border">Name</th><th class="p-3 border">Price</th>
+      <th class="p-3 border">Desc</th><th class="p-3 border">Actions</th>
+    </tr></thead>
+    <tbody id="productTable" class="divide-y"></tbody>
+  </table>
+</div>
+
+<div id="usersTab" class="hidden">
+  <form id="userForm" class="grid md:grid-cols-3 gap-4 mb-6">
+    <input type="text" id="uname" placeholder="Name" class="p-2 border rounded" required>
+    <input type="email" id="uemail" placeholder="Email" class="p-2 border rounded" required>
+    <input type="number" id="uage" placeholder="Age" class="p-2 border rounded">
+    <button class="bg-green-500 text-white p-2 rounded hover:bg-green-600">Add User</button>
+  </form>
+  <table class="min-w-full border text-sm text-left">
+    <thead class="bg-gray-200"><tr>
+      <th class="p-3 border">ID</th><th class="p-3 border">Name</th><th class="p-3 border">Email</th>
+      <th class="p-3 border">Age</th><th class="p-3 border">Actions</th>
+    </tr></thead>
+    <tbody id="userTable" class="divide-y"></tbody>
+  </table>
+</div>
+</div>
+
+<div id="toast" class="fixed top-5 right-5 bg-black text-white py-2 px-4 rounded shadow-lg toast"></div>
+
+<script>
+const showToast = (msg, color="bg-black") => {
+  const toast = document.getElementById('toast');
+  toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded shadow-lg toast show ${color}`;
+  toast.innerText = msg;
+  setTimeout(() => toast.classList.remove('show'), 3000);
+};
+
+function switchTab(tab) {
+  document.getElementById('productsTab').classList.toggle('hidden', tab !== 'products');
+  document.getElementById('usersTab').classList.toggle('hidden', tab !== 'users');
+}
+
+async function loadProducts() {
+  const res = await fetch("/api/products");
+  const products = await res.json();
+  document.getElementById('productTable').innerHTML = products.map(p=>`
+    <tr>
+      <td class="p-2 border break-words w-48">${p._id}</td>
+      <td class="p-2 border">${p.name}</td>
+      <td class="p-2 border">₹${p.price}</td>
+      <td class="p-2 border">${p.description}</td>
+      <td class="p-2 border">
+        <button onclick="deleteProduct('${p._id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadUsers() {
+  const res = await fetch("/api/users");
+  const users = await res.json();
+  document.getElementById('userTable').innerHTML = users.map(u=>`
+    <tr>
+      <td class="p-2 border break-words w-48">${u._id}</td>
+      <td class="p-2 border">${u.name}</td>
+      <td class="p-2 border">${u.email}</td>
+      <td class="p-2 border">${u.age}</td>
+      <td class="p-2 border">
+        <button onclick="deleteUser('${u._id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+document.getElementById('productForm').onsubmit = async e => {
+  e.preventDefault();
+  const data = {
+    name: pname.value, price: pprice.value, description: pdesc.value
+  };
+  await fetch("/api/products", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  loadProducts();
+  showToast("Product added!","bg-green-600");
+  e.target.reset();
+};
+
+document.getElementById('userForm').onsubmit = async e => {
+  e.preventDefault();
+  const data = { name: uname.value, email: uemail.value, age: uage.value };
+  await fetch("/api/users", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  loadUsers();
+  showToast("User added!","bg-green-600");
+  e.target.reset();
+};
+
+async function deleteProduct(id) {
+  await fetch(`/api/products/${id}`, { method: "DELETE" });
+  loadProducts();
+  showToast("Product deleted","bg-red-600");
+}
+
+async function deleteUser(id) {
+  await fetch(`/api/users/${id}`, { method: "DELETE" });
+  loadUsers();
+  showToast("User deleted","bg-red-600");
+}
+
+loadProducts();
+loadUsers();
+</script>
+</body>
+</html>
