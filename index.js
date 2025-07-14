@@ -10,8 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+// Only take MONGO_URI from .env
 const MONGO_URI = process.env.MONGO_URI;
+
+// Hardcode your port here
+const PORT = 5000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +27,7 @@ mongoose.connect(MONGO_URI, {
 .then(() => console.log("✅ MongoDB connected"))
 .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// Product Schema
+// ---------------- SCHEMAS -----------------
 const productSchema = new mongoose.Schema({
   name: String,
   price: Number,
@@ -32,7 +35,6 @@ const productSchema = new mongoose.Schema({
 });
 const Product = mongoose.model('Product', productSchema);
 
-// User Schema
 const userSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -40,7 +42,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// ----------------- PRODUCT ROUTES ----------------
+// ---------------- PRODUCT ROUTES ----------------
 app.get('/api/products', async (req, res) => {
   const products = await Product.find();
   res.json(products);
@@ -63,7 +65,7 @@ app.delete('/api/products/:id', async (req, res) => {
   res.json({ message: "Product deleted" });
 });
 
-// ----------------- USER ROUTES ----------------
+// ---------------- USER ROUTES ----------------
 app.get('/api/users', async (req, res) => {
   const users = await User.find();
   res.json(users);
@@ -86,4 +88,5 @@ app.delete('/api/users/:id', async (req, res) => {
   res.json({ message: "User deleted" });
 });
 
+// ---------------- START SERVER ----------------
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
